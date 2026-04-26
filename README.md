@@ -2,22 +2,18 @@
 
 A collection of Low-Level Design (LLD) / Machine Coding problems implemented in Java.
 
----
-
-## What this repo is
+### What this repo is
 
 - a set of **interview-style systems**
 - focused on **design clarity, concurrency, and code quality**
 - scoped to what can reasonably be built in ~1 hour
 
-## What this repo is not
+### What this repo is not
 
 - a collection of perfect or production-ready systems
 - the “best” or only way to solve these problems
 
 Every design here is just **one way to approach the problem**.
-
----
 
 ## Structure
 
@@ -28,8 +24,6 @@ Each problem lives in its own folder:
 ├── README.md          # problem statement + approach
 └── design-notes.md    # tradeoffs, decisions, and extensions
 ```
-
----
 
 ## Notes
 
