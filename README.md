@@ -20,9 +20,9 @@ Every design here is just **one way to approach the problem**.
 Each problem lives in its own folder:
 ```
 <problem-name>/
-├── src/               # implementation
-├── README.md          # problem statement + approach
-└── design-notes.md    # tradeoffs, decisions, and extensions
+├── src/                          # implementation
+├── problem-statement.md          # problem statement
+└── design-notes.md               # tradeoffs, decisions, and extensions
 ```
 
 ## Notes
