@@ -12,6 +12,7 @@
 
     <modules>
         <module>in-memory-webhook</module>
+        <module>conference-room-reservation-system</module>
     </modules>
 
     <properties>
