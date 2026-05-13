@@ -13,10 +13,12 @@
     <modules>
         <module>in-memory-webhook</module>
         <module>conference-room-reservation-system</module>
+        <module>in-memory-trading-service</module>
     </modules>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.proc>full</maven.compiler.proc>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <lombok.version>1.18.44</lombok.version>
@@ -53,6 +55,14 @@
                     <version>${maven.compiler.plugin.version}</version>
                     <configuration>
                         <release>${maven.compiler.release}</release>
+                        <proc>${maven.compiler.proc}</proc>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
 
