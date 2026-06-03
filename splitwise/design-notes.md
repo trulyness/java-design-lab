@@ -9,6 +9,9 @@
 - Group creation returns the generated group ID, which is the minimal value callers need for later group operations.
 - Group membership changes require an authenticated email, and only an existing current group member may add or remove members.
 - Group member emails must correspond to existing users before they can be added to a group.
+- Expenses are group-scoped for the current implementation; direct non-group expenses are left as a future extension.
+- Expense APIs require explicit participants from the caller. If the user selects the whole group, the frontend should send all group members rather than relying on an empty participant set.
+- `SplitType` is stored for audit/history; public APIs such as equal, exact, and percentage expense creation determine the split behavior.
 
 ## Concurrency Approach
 
@@ -21,6 +24,12 @@
 - `Group` is intentionally not fully immutable: membership is expected to change as users are added to or removed from a group.
 - The `Group` members field is a final set reference, but the set contents are mutable through group membership operations.
 - Initial group members are defensively copied during group creation so callers cannot mutate the group by holding on to the original input set.
+- `Expense` stores both `createdBy` and `paidBy`: the authenticated user records the expense, while another group member may be the payer.
+- `Expense.participantShares` stores final absolute amounts each participant owes, not raw percentage inputs.
+- Money values use `BigDecimal` instead of integer or floating point types.
+- Expense participants and exact-share maps are defensively copied before creating the stored expense.
+- Exact splits require participant shares to be positive and add up to the total expense amount.
+- Percentage splits require percentages to be positive and add up to `100`; raw percentages are converted into final absolute owed amounts before storing the expense.
 
 ## Known Tradeoffs
 
@@ -28,6 +37,7 @@
 - If email changes need to be supported later, the design should move to a generated immutable user ID with email as a unique secondary attribute.
 - Removing a member from a group affects future group participation only; historical expenses and balances should continue to reference the original participants.
 - The design does not introduce group admins yet; any current group member may manage membership for the interview-scope implementation.
+- Equal and percentage splits use straightforward two-decimal rounding per participant; tiny rounding residuals are accepted for now to keep the implementation simple.
 
 ## Potential Enhancements
 

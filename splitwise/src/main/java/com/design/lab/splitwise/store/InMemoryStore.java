@@ -8,16 +8,19 @@ import com.design.lab.splitwise.exceptions.GroupMembershipRequiredException;
 import com.design.lab.splitwise.exceptions.GroupNotFoundException;
 import com.design.lab.splitwise.exceptions.UserAlreadyExistsException;
 import com.design.lab.splitwise.exceptions.UserNotFoundException;
+import com.design.lab.splitwise.model.Expense;
 import com.design.lab.splitwise.model.Group;
 import com.design.lab.splitwise.model.User;
 
 public class InMemoryStore implements Store {
     private final Map<String, User> users;
     private final Map<String, Group> groups;
+    private final Map<String, Expense> expenses;
 
     public InMemoryStore() {
         this.users = new HashMap<>();
         this.groups = new HashMap<>();
+        this.expenses = new HashMap<>();
     }
 
     @Override
@@ -62,6 +65,26 @@ public class InMemoryStore implements Store {
         group.removeMembers(newMembers);
     }
 
+    @Override
+    public Set<String> getParticipantsInGroup(final String authenticatedEmail, final String groupId) {
+        final Group group = getGroupForMember(authenticatedEmail, groupId);
+        return group.getMembers();
+    }
+
+    @Override
+    public String createExpense(final Expense expense) {
+        final String authenticatedEmail = expense.getCreatedBy();
+        final String groupId = expense.getGroupId();
+        final Group group = getGroupForMember(authenticatedEmail, groupId);
+        final Set<String> participants = expense.getParticipantShares().keySet();
+
+        validateUserInGroup(expense.getPaidBy(), group);
+        validateUsersInGroup(participants, group);
+
+        expenses.put(expense.getExpenseId(), expense);
+        return expense.getExpenseId();
+    }
+
     private Group getGroupForMember(final String authenticatedEmail, final String groupId) {
         if (!users.containsKey(authenticatedEmail)) {
             throw new UserNotFoundException(authenticatedEmail);
@@ -84,6 +107,23 @@ public class InMemoryStore implements Store {
             if (!users.containsKey(member)) {
                 throw new UserNotFoundException(member);
             }
+        }
+    }
+
+    private void validateUsersInGroup(final Set<String> members, final Group group) {
+        validateUsersExist(members);
+        for (final String member : members) {
+            validateUserInGroup(member, group);
+        }
+    }
+
+    private void validateUserInGroup(final String email, final Group group) {
+        if (!users.containsKey(email)) {
+            throw new UserNotFoundException(email);
+        }
+
+        if (!group.getMembers().contains(email)) {
+            throw new GroupMembershipRequiredException(email, group.getGroupId());
         }
     }
 }
