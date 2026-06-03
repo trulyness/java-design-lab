@@ -10,6 +10,6 @@ public interface Store {
     void updateUser(final User user);
 
     void createGroup(final Group group);
-    void addMembersToGroup(final String groupId, final Set<String> members);
-    void removeMembersFromGroup(final String groupId, final Set<String> newMembers);
+    void addMembersToGroup(final String authenticatedEmail, final String groupId, final Set<String> members);
+    void removeMembersFromGroup(final String authenticatedEmail, final String groupId, final Set<String> newMembers);
 }

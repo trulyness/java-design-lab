@@ -25,11 +25,15 @@ public class GroupManagementService {
         return group.getGroupId();
     }
 
-    public void addMembersToGroup(final String groupId, final Set<String> members) {
-        this.store.addMembersToGroup(groupId, members);
+    public void addMembersToGroup(final String authenticatedEmail,
+                                  final String groupId,
+                                  final Set<String> members) {
+        this.store.addMembersToGroup(authenticatedEmail, groupId, members);
     }
 
-    public void removeMembersFromGroup(final String groupId, final Set<String> members) {
-        this.store.removeMembersFromGroup(groupId, members);
+    public void removeMembersFromGroup(final String authenticatedEmail,
+                                       final String groupId,
+                                       final Set<String> members) {
+        this.store.removeMembersFromGroup(authenticatedEmail, groupId, members);
     }
 }

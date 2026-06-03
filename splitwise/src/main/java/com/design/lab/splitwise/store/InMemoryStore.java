@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.design.lab.splitwise.exceptions.GroupMembershipRequiredException;
 import com.design.lab.splitwise.exceptions.GroupNotFoundException;
 import com.design.lab.splitwise.exceptions.UserAlreadyExistsException;
 import com.design.lab.splitwise.exceptions.UserNotFoundException;
@@ -40,26 +41,49 @@ public class InMemoryStore implements Store {
 
     @Override
     public void createGroup(final Group group) {
+        validateUsersExist(group.getMembers());
         groups.put(group.getGroupId(), group);
     }
 
     @Override
-    public void addMembersToGroup(final String groupId, final Set<String> members) {
-        final Group group = groups.get(groupId);
-        if (group == null) {
-            throw new GroupNotFoundException();
-        }
+    public void addMembersToGroup(final String authenticatedEmail,
+                                  final String groupId,
+                                  final Set<String> members) {
+        final Group group = getGroupForMember(authenticatedEmail, groupId);
+        validateUsersExist(members);
         group.addMembers(members);
     }
 
     @Override
-    public void removeMembersFromGroup(final String groupId, final Set<String> newMembers) {
+    public void removeMembersFromGroup(final String authenticatedEmail,
+                                       final String groupId,
+                                       final Set<String> newMembers) {
+        final Group group = getGroupForMember(authenticatedEmail, groupId);
+        group.removeMembers(newMembers);
+    }
+
+    private Group getGroupForMember(final String authenticatedEmail, final String groupId) {
+        if (!users.containsKey(authenticatedEmail)) {
+            throw new UserNotFoundException(authenticatedEmail);
+        }
+
         final Group group = groups.get(groupId);
         if (group == null) {
             throw new GroupNotFoundException();
         }
 
-        group.removeMembers(newMembers);
+        if (!group.getMembers().contains(authenticatedEmail)) {
+            throw new GroupMembershipRequiredException(authenticatedEmail, groupId);
+        }
+
+        return group;
     }
 
+    private void validateUsersExist(final Set<String> members) {
+        for (final String member : members) {
+            if (!users.containsKey(member)) {
+                throw new UserNotFoundException(member);
+            }
+        }
+    }
 }

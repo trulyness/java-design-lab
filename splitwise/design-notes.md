@@ -7,6 +7,8 @@
 - In a real backend API, the email argument for profile updates represents authenticated user identity from request context or validated JWT claims, not arbitrary request input.
 - For profile creation, email may either come from a verified signup flow or from an authenticated identity provider/JWT after login; this design assumes the email has already been verified by the auth layer.
 - Group creation returns the generated group ID, which is the minimal value callers need for later group operations.
+- Group membership changes require an authenticated email, and only an existing current group member may add or remove members.
+- Group member emails must correspond to existing users before they can be added to a group.
 
 ## Concurrency Approach
 
@@ -25,6 +27,7 @@
 - Using email as the primary key keeps the initial design simple, but it assumes email never changes.
 - If email changes need to be supported later, the design should move to a generated immutable user ID with email as a unique secondary attribute.
 - Removing a member from a group affects future group participation only; historical expenses and balances should continue to reference the original participants.
+- The design does not introduce group admins yet; any current group member may manage membership for the interview-scope implementation.
 
 ## Potential Enhancements
 
