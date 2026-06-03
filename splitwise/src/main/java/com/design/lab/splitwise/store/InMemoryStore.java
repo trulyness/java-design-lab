@@ -1,6 +1,8 @@
 package com.design.lab.splitwise.store;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,11 +18,13 @@ public class InMemoryStore implements Store {
     private final Map<String, User> users;
     private final Map<String, Group> groups;
     private final Map<String, Expense> expenses;
+    private final Map<String, List<String>> expensesPerGroup;
 
     public InMemoryStore() {
         this.users = new HashMap<>();
         this.groups = new HashMap<>();
         this.expenses = new HashMap<>();
+        this.expensesPerGroup = new HashMap<>();
     }
 
     @Override
@@ -82,7 +86,19 @@ public class InMemoryStore implements Store {
         validateUsersInGroup(participants, group);
 
         expenses.put(expense.getExpenseId(), expense);
+        expensesPerGroup.computeIfAbsent(groupId, k -> new ArrayList<>()).add(expense.getExpenseId());
         return expense.getExpenseId();
+    }
+
+    @Override
+    public List<Expense> getGroupExpenses(final String authenticatedEmail, final String groupId) {
+        getGroupForMember(authenticatedEmail, groupId);
+        final List<String> expenseIds = expensesPerGroup.getOrDefault(groupId, new ArrayList<>());
+        final List<Expense> expensesForGroup = new ArrayList<>();
+        for (final String id : expenseIds) {
+            expensesForGroup.add(expenses.get(id));
+        }
+        return expensesForGroup;
     }
 
     private Group getGroupForMember(final String authenticatedEmail, final String groupId) {

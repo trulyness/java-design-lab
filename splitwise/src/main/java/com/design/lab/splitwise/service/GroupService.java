@@ -1,16 +1,18 @@
 package com.design.lab.splitwise.service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.design.lab.splitwise.model.Expense;
 import com.design.lab.splitwise.model.Group;
 import com.design.lab.splitwise.store.Store;
 
-public class GroupManagementService {
+public class GroupService {
     private final Store store;
 
-    public GroupManagementService(final Store store) {
+    public GroupService(final Store store) {
         this.store = store;
     }
 
@@ -35,5 +37,15 @@ public class GroupManagementService {
                                        final String groupId,
                                        final Set<String> members) {
         this.store.removeMembersFromGroup(authenticatedEmail, groupId, members);
+    }
+
+    public Set<String> getParticipantsInGroup(final String authenticatedEmail,
+                                              final String groupId) {
+        return this.store.getParticipantsInGroup(authenticatedEmail, groupId);
+    }
+
+    public List<Expense> getGroupExpenses(final String authenticatedEmail,
+                                          final String groupId) {
+        return this.store.getGroupExpenses(authenticatedEmail, groupId);
     }
 }

@@ -38,6 +38,7 @@
 - Removing a member from a group affects future group participation only; historical expenses and balances should continue to reference the original participants.
 - The design does not introduce group admins yet; any current group member may manage membership for the interview-scope implementation.
 - Equal and percentage splits use straightforward two-decimal rounding per participant; tiny rounding residuals are accepted for now to keep the implementation simple.
+- Removed group members are not granted separate historical group-expense access in this version; supporting that would require membership history or per-expense visibility rules.
 
 ## Potential Enhancements
 
