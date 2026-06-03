@@ -1,9 +1,9 @@
-package com.trading.model;
+package com.design.lab.trading.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import com.trading.enums.OrderType;
+import com.design.lab.trading.enums.OrderType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

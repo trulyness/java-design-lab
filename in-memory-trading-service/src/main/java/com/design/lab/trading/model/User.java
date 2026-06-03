@@ -1,4 +1,4 @@
-package com.trading.model;
+package com.design.lab.trading.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

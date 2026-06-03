@@ -1,4 +1,4 @@
-package com.trading.service;
+package com.design.lab.trading.service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -6,15 +6,15 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.UUID;
 
-import com.trading.book.OrderBook;
-import com.trading.enums.OrderStatus;
-import com.trading.enums.OrderType;
-import com.trading.exceptions.OrderBookNotFoundException;
-import com.trading.exceptions.OrderNotFoundException;
-import com.trading.exceptions.UnauthorizedAccessException;
-import com.trading.model.Order;
-import com.trading.model.Trade;
-import com.trading.store.Store;
+import com.design.lab.trading.book.OrderBook;
+import com.design.lab.trading.enums.OrderStatus;
+import com.design.lab.trading.enums.OrderType;
+import com.design.lab.trading.exceptions.OrderBookNotFoundException;
+import com.design.lab.trading.exceptions.OrderNotFoundException;
+import com.design.lab.trading.exceptions.UnauthorizedAccessException;
+import com.design.lab.trading.model.Order;
+import com.design.lab.trading.model.Trade;
+import com.design.lab.trading.store.Store;
 
 import lombok.Builder;
 import lombok.Getter;

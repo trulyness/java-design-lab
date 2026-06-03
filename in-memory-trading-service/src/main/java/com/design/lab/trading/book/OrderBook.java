@@ -1,4 +1,4 @@
-package com.trading.book;
+package com.design.lab.trading.book;
 
 import java.math.BigDecimal;
 import java.util.ArrayDeque;
@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.trading.enums.OrderType;
-import com.trading.model.Order;
+import com.design.lab.trading.enums.OrderType;
+import com.design.lab.trading.model.Order;
 
 public class OrderBook {
     private final String symbol;

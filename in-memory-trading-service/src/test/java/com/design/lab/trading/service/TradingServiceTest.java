@@ -1,4 +1,4 @@
-package com.trading.service;
+package com.design.lab.trading.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,11 +10,11 @@ import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.trading.enums.OrderStatus;
-import com.trading.enums.OrderType;
-import com.trading.model.Trade;
-import com.trading.model.User;
-import com.trading.store.InMemoryStore;
+import com.design.lab.trading.enums.OrderStatus;
+import com.design.lab.trading.enums.OrderType;
+import com.design.lab.trading.model.Trade;
+import com.design.lab.trading.model.User;
+import com.design.lab.trading.store.InMemoryStore;
 
 class TradingServiceTest {
 

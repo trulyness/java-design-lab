@@ -1,4 +1,4 @@
-package com.trading.exceptions;
+package com.design.lab.trading.exceptions;
 
 public class OrderNotFoundException extends RuntimeException {
     public OrderNotFoundException(final String orderId) {

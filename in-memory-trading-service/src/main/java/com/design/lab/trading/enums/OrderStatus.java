@@ -1,4 +1,4 @@
-package com.trading.enums;
+package com.design.lab.trading.enums;
 
 public enum OrderStatus {
     ACCEPTED,

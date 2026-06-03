@@ -1,12 +1,12 @@
-package com.trading.store;
+package com.design.lab.trading.store;
 
 import java.util.List;
 import java.util.Optional;
 
-import com.trading.book.OrderBook;
-import com.trading.model.Order;
-import com.trading.model.Trade;
-import com.trading.model.User;
+import com.design.lab.trading.book.OrderBook;
+import com.design.lab.trading.model.Order;
+import com.design.lab.trading.model.Trade;
+import com.design.lab.trading.model.User;
 
 public interface Store {
     Optional<User> getUserById(final String userId);
