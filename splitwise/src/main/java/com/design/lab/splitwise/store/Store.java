@@ -7,6 +7,7 @@ import java.util.Set;
 
 import com.design.lab.splitwise.model.Expense;
 import com.design.lab.splitwise.model.Group;
+import com.design.lab.splitwise.model.Transaction;
 import com.design.lab.splitwise.model.User;
 
 public interface Store {
@@ -23,4 +24,5 @@ public interface Store {
 
     Map<String, BigDecimal> getBalancesForUser(final String authenticatedEmail);
     void settleUp(final String authenticatedEmail, final String paidTo, final BigDecimal amount);
+    List<Transaction> getTransactionHistory(final String authenticatedEmail);
 }

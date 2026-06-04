@@ -1,12 +1,15 @@
 package com.design.lab.splitwise.store;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
+import com.design.lab.splitwise.enums.TransactionType;
 import com.design.lab.splitwise.exceptions.GroupMembershipRequiredException;
 import com.design.lab.splitwise.exceptions.GroupNotFoundException;
 import com.design.lab.splitwise.exceptions.InvalidExpenseException;
@@ -14,6 +17,7 @@ import com.design.lab.splitwise.exceptions.UserAlreadyExistsException;
 import com.design.lab.splitwise.exceptions.UserNotFoundException;
 import com.design.lab.splitwise.model.Expense;
 import com.design.lab.splitwise.model.Group;
+import com.design.lab.splitwise.model.Transaction;
 import com.design.lab.splitwise.model.User;
 
 public class InMemoryStore implements Store {
@@ -21,14 +25,18 @@ public class InMemoryStore implements Store {
     private final Map<String, Group> groups;
     private final Map<String, Expense> expenses;
     private final Map<String, List<String>> expensesPerGroup;
-    private final Map<String, Map<String, BigDecimal>> balances;
+    private final Map<String, Map<String, BigDecimal>> balances; 
+    private final Map<String, Transaction> transactions;
+    private final Map<String, List<String>> transactionsPerUser;
 
     public InMemoryStore() {
         this.users = new HashMap<>();
         this.groups = new HashMap<>();
         this.expenses = new HashMap<>();
         this.expensesPerGroup = new HashMap<>();
-        this.balances = new HashMap<>(); 
+        this.balances = new HashMap<>();
+        this.transactions = new HashMap<>();
+        this.transactionsPerUser = new HashMap<>();
     }
 
     @Override
@@ -97,6 +105,18 @@ public class InMemoryStore implements Store {
             final BigDecimal share = entry.getValue();
             if (!participant.equals(expense.getPaidBy())) {
                 updateBalance(participant, expense.getPaidBy(), share);
+                final Transaction transaction = Transaction.builder()
+                                                            .id(UUID.randomUUID().toString())
+                                                            .type(TransactionType.EXPENSE)
+                                                            .amount(share)
+                                                            .paidBy(participant)
+                                                            .paidTo(expense.getPaidBy())
+                                                            .createdAt(Instant.now())
+                                                            .groupId(groupId)
+                                                            .build();
+                transactions.put(transaction.getId(), transaction);
+                transactionsPerUser.computeIfAbsent(participant, k -> new ArrayList<>()).add(transaction.getId());
+                transactionsPerUser.computeIfAbsent(expense.getPaidBy(), k -> new ArrayList<>()).add(transaction.getId());
             }
         }
         return expense.getExpenseId();
@@ -137,6 +157,34 @@ public class InMemoryStore implements Store {
         }
 
         updateBalance(paidTo, authenticatedEmail, amount);
+        final Transaction transaction = Transaction.builder()
+                                                    .id(UUID.randomUUID().toString())
+                                                    .type(TransactionType.SETTLE)
+                                                    .amount(amount)
+                                                    .paidBy(authenticatedEmail)
+                                                    .paidTo(paidTo)
+                                                    .createdAt(Instant.now())
+                                                    .build();
+
+        transactions.put(transaction.getId(), transaction);
+        transactionsPerUser.computeIfAbsent(paidTo, k -> new ArrayList<>()).add(transaction.getId());
+        transactionsPerUser.computeIfAbsent(authenticatedEmail, k -> new ArrayList<>()).add(transaction.getId());
+    }
+
+    @Override
+    public List<Transaction> getTransactionHistory(final String authenticatedEmail) {
+        if (!users.containsKey(authenticatedEmail)) {
+            throw new UserNotFoundException(authenticatedEmail);
+        }
+
+        final List<String> transactionIds = transactionsPerUser.getOrDefault(authenticatedEmail, new ArrayList<>());
+        final List<Transaction> transactionsForUser = new ArrayList<>();
+
+        for (final String id : transactionIds) {
+            transactionsForUser.add(transactions.get(id));
+        }
+
+        return transactionsForUser;
     }
 
     private void updateBalance(final String paidFor, final String paidBy, final BigDecimal amount) {

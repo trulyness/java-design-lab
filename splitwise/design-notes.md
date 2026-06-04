@@ -33,6 +33,8 @@
 - Balances are tracked globally between users across all groups rather than separately per group.
 - Balance sign convention: `balances[A][B] > 0` means `B` owes `A`; `balances[A][B] < 0` means `A` owes `B`.
 - Settlement amounts do not need to exactly match the current amount owed; partial settlements, full settlements, and overpayments that flip the balance are allowed.
+- Transaction history is modeled as user-level balance movements, including expense-derived owed amounts and settlements.
+- Expense transactions are recorded per participant who owes the payer; settlement transactions have no group ID.
 
 ## Known Tradeoffs
 
@@ -42,7 +44,9 @@
 - The design does not introduce group admins yet; any current group member may manage membership for the interview-scope implementation.
 - Equal and percentage splits use straightforward two-decimal rounding per participant; tiny rounding residuals are accepted for now to keep the implementation simple.
 - Removed group members are not granted separate historical group-expense access in this version; supporting that would require membership history or per-expense visibility rules.
+- Transaction history could also be shown as full expense/settlement detail cards or as a generic activity feed; this version uses user-level balance movement records to keep the model compact.
 
 ## Potential Enhancements
 
-- To be filled in during implementation.
+- Add richer transaction history views that group multiple expense-derived balance movements back into one original expense event.
+- Add filters for transaction history by group, user, transaction type, and date range.

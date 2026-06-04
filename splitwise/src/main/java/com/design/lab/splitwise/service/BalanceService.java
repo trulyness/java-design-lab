@@ -1,8 +1,10 @@
 package com.design.lab.splitwise.service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
+import com.design.lab.splitwise.model.Transaction;
 import com.design.lab.splitwise.store.Store;
 
 public class BalanceService {
@@ -17,8 +19,12 @@ public class BalanceService {
     }
 
     public void settleUp(final String authenticatedEmail,
-                    final String paidTo,
-                    final BigDecimal amount) {
+                         final String paidTo,
+                         final BigDecimal amount) {
         this.store.settleUp(authenticatedEmail, paidTo, amount);
+    }
+
+    public List<Transaction> getTransactionHistory(final String authenticatedEmail) {
+        return this.store.getTransactionHistory(authenticatedEmail);
     }
 }
