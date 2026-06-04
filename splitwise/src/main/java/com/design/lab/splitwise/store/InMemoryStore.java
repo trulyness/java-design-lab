@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.design.lab.splitwise.enums.TransactionType;
 import com.design.lab.splitwise.exceptions.GroupMembershipRequiredException;
@@ -25,9 +26,10 @@ public class InMemoryStore implements Store {
     private final Map<String, Group> groups;
     private final Map<String, Expense> expenses;
     private final Map<String, List<String>> expensesPerGroup;
-    private final Map<String, Map<String, BigDecimal>> balances; 
+    private final Map<String, Map<String, BigDecimal>> balances;
     private final Map<String, Transaction> transactions;
     private final Map<String, List<String>> transactionsPerUser;
+    private final ReentrantLock lock = new ReentrantLock();
 
     public InMemoryStore() {
         this.users = new HashMap<>();
@@ -41,150 +43,205 @@ public class InMemoryStore implements Store {
 
     @Override
     public void createUser(final User user) {
-        final String email = user.getEmail();
-        if (users.containsKey(email)) {
-            throw new UserAlreadyExistsException(email);
+        lock.lock();
+        try {
+            final String email = user.getEmail();
+            if (users.containsKey(email)) {
+                throw new UserAlreadyExistsException(email);
+            }
+            users.put(email, user);
+        } finally {
+            lock.unlock();
         }
-        users.put(email, user);
     }
 
     @Override
     public void updateUser(final User user) {
-        final String email = user.getEmail();
-        if (!users.containsKey(email)) {
-            throw new UserNotFoundException(email);
-        }
+        lock.lock();
+        try {
+            final String email = user.getEmail();
+            if (!users.containsKey(email)) {
+                throw new UserNotFoundException(email);
+            }
 
-        users.put(email, user);
+            users.put(email, user);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void createGroup(final Group group) {
-        validateUsersExist(group.getMembers());
-        groups.put(group.getGroupId(), group);
+        lock.lock();
+        try {
+            validateUsersExist(group.getMembers());
+            groups.put(group.getGroupId(), group);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void addMembersToGroup(final String authenticatedEmail,
                                   final String groupId,
                                   final Set<String> members) {
-        final Group group = getGroupForMember(authenticatedEmail, groupId);
-        validateUsersExist(members);
-        group.addMembers(members);
+        lock.lock();
+        try {
+            final Group group = getGroupForMember(authenticatedEmail, groupId);
+            validateUsersExist(members);
+            group.addMembers(members);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void removeMembersFromGroup(final String authenticatedEmail,
                                        final String groupId,
                                        final Set<String> newMembers) {
-        final Group group = getGroupForMember(authenticatedEmail, groupId);
-        group.removeMembers(newMembers);
+        lock.lock();
+        try {
+            final Group group = getGroupForMember(authenticatedEmail, groupId);
+            group.removeMembers(newMembers);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public Set<String> getParticipantsInGroup(final String authenticatedEmail, final String groupId) {
-        final Group group = getGroupForMember(authenticatedEmail, groupId);
-        return group.getMembers();
+        lock.lock();
+        try {
+            final Group group = getGroupForMember(authenticatedEmail, groupId);
+            return group.getMembers();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public String createExpense(final Expense expense) {
-        final String authenticatedEmail = expense.getCreatedBy();
-        final String groupId = expense.getGroupId();
-        final Group group = getGroupForMember(authenticatedEmail, groupId);
-        final Set<String> participants = expense.getParticipantShares().keySet();
+        lock.lock();
+        try {
+            final String authenticatedEmail = expense.getCreatedBy();
+            final String groupId = expense.getGroupId();
+            final Group group = getGroupForMember(authenticatedEmail, groupId);
+            final Set<String> participants = expense.getParticipantShares().keySet();
 
-        validateUserInGroup(expense.getPaidBy(), group);
-        validateUsersInGroup(participants, group);
+            validateUserInGroup(expense.getPaidBy(), group);
+            validateUsersInGroup(participants, group);
 
-        expenses.put(expense.getExpenseId(), expense);
-        expensesPerGroup.computeIfAbsent(groupId, k -> new ArrayList<>()).add(expense.getExpenseId());
-        final Map<String, BigDecimal> shares = expense.getParticipantShares();
-        for (final Map.Entry<String, BigDecimal> entry : shares.entrySet()) {
-            final String participant = entry.getKey();
-            final BigDecimal share = entry.getValue();
-            if (!participant.equals(expense.getPaidBy())) {
-                updateBalance(participant, expense.getPaidBy(), share);
-                final Transaction transaction = Transaction.builder()
-                                                            .id(UUID.randomUUID().toString())
-                                                            .type(TransactionType.EXPENSE)
-                                                            .amount(share)
-                                                            .paidBy(participant)
-                                                            .paidTo(expense.getPaidBy())
-                                                            .createdAt(Instant.now())
-                                                            .groupId(groupId)
-                                                            .build();
-                transactions.put(transaction.getId(), transaction);
-                transactionsPerUser.computeIfAbsent(participant, k -> new ArrayList<>()).add(transaction.getId());
-                transactionsPerUser.computeIfAbsent(expense.getPaidBy(), k -> new ArrayList<>()).add(transaction.getId());
+            expenses.put(expense.getExpenseId(), expense);
+            expensesPerGroup.computeIfAbsent(groupId, k -> new ArrayList<>()).add(expense.getExpenseId());
+            final Map<String, BigDecimal> shares = expense.getParticipantShares();
+            for (final Map.Entry<String, BigDecimal> entry : shares.entrySet()) {
+                final String participant = entry.getKey();
+                final BigDecimal share = entry.getValue();
+                if (!participant.equals(expense.getPaidBy())) {
+                    updateBalance(participant, expense.getPaidBy(), share);
+                    final Transaction transaction = Transaction.builder()
+                                                                .id(UUID.randomUUID().toString())
+                                                                .type(TransactionType.EXPENSE)
+                                                                .amount(share)
+                                                                .paidBy(participant)
+                                                                .paidTo(expense.getPaidBy())
+                                                                .createdAt(Instant.now())
+                                                                .groupId(groupId)
+                                                                .build();
+                    transactions.put(transaction.getId(), transaction);
+                    transactionsPerUser.computeIfAbsent(participant, k -> new ArrayList<>()).add(transaction.getId());
+                    transactionsPerUser.computeIfAbsent(expense.getPaidBy(), k -> new ArrayList<>()).add(transaction.getId());
+                }
             }
+            return expense.getExpenseId();
+        } finally {
+            lock.unlock();
         }
-        return expense.getExpenseId();
     }
 
     @Override
     public List<Expense> getGroupExpenses(final String authenticatedEmail, final String groupId) {
-        getGroupForMember(authenticatedEmail, groupId);
-        final List<String> expenseIds = expensesPerGroup.getOrDefault(groupId, new ArrayList<>());
-        final List<Expense> expensesForGroup = new ArrayList<>();
-        for (final String id : expenseIds) {
-            expensesForGroup.add(expenses.get(id));
+        lock.lock();
+        try {
+            getGroupForMember(authenticatedEmail, groupId);
+            final List<String> expenseIds = expensesPerGroup.getOrDefault(groupId, new ArrayList<>());
+            final List<Expense> expensesForGroup = new ArrayList<>();
+            for (final String id : expenseIds) {
+                expensesForGroup.add(expenses.get(id));
+            }
+            return expensesForGroup;
+        } finally {
+            lock.unlock();
         }
-        return expensesForGroup;
     }
 
     @Override
     public Map<String, BigDecimal> getBalancesForUser(final String authenticatedEmail) {
-        if (!users.containsKey(authenticatedEmail)) {
-            throw new UserNotFoundException(authenticatedEmail);
-        }
+        lock.lock();
+        try {
+            if (!users.containsKey(authenticatedEmail)) {
+                throw new UserNotFoundException(authenticatedEmail);
+            }
 
-        return new HashMap<>(balances.getOrDefault(authenticatedEmail, new HashMap<>()));
+            return new HashMap<>(balances.getOrDefault(authenticatedEmail, new HashMap<>()));
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void settleUp(final String authenticatedEmail, final String paidTo, final BigDecimal amount) {
-        if (!users.containsKey(authenticatedEmail)) {
-            throw new UserNotFoundException(authenticatedEmail);
+        lock.lock();
+        try {
+            if (!users.containsKey(authenticatedEmail)) {
+                throw new UserNotFoundException(authenticatedEmail);
+            }
+
+            if (!users.containsKey(paidTo)) {
+                throw new UserNotFoundException(paidTo);
+            }
+
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new InvalidExpenseException("Settlement amount must be greater than zero");
+            }
+
+            updateBalance(paidTo, authenticatedEmail, amount);
+            final Transaction transaction = Transaction.builder()
+                                                        .id(UUID.randomUUID().toString())
+                                                        .type(TransactionType.SETTLE)
+                                                        .amount(amount)
+                                                        .paidBy(authenticatedEmail)
+                                                        .paidTo(paidTo)
+                                                        .createdAt(Instant.now())
+                                                        .build();
+
+            transactions.put(transaction.getId(), transaction);
+            transactionsPerUser.computeIfAbsent(paidTo, k -> new ArrayList<>()).add(transaction.getId());
+            transactionsPerUser.computeIfAbsent(authenticatedEmail, k -> new ArrayList<>()).add(transaction.getId());
+        } finally {
+            lock.unlock();
         }
-
-        if (!users.containsKey(paidTo)) {
-            throw new UserNotFoundException(paidTo);
-        }
-
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidExpenseException("Settlement amount must be greater than zero");
-        }
-
-        updateBalance(paidTo, authenticatedEmail, amount);
-        final Transaction transaction = Transaction.builder()
-                                                    .id(UUID.randomUUID().toString())
-                                                    .type(TransactionType.SETTLE)
-                                                    .amount(amount)
-                                                    .paidBy(authenticatedEmail)
-                                                    .paidTo(paidTo)
-                                                    .createdAt(Instant.now())
-                                                    .build();
-
-        transactions.put(transaction.getId(), transaction);
-        transactionsPerUser.computeIfAbsent(paidTo, k -> new ArrayList<>()).add(transaction.getId());
-        transactionsPerUser.computeIfAbsent(authenticatedEmail, k -> new ArrayList<>()).add(transaction.getId());
     }
 
     @Override
     public List<Transaction> getTransactionHistory(final String authenticatedEmail) {
-        if (!users.containsKey(authenticatedEmail)) {
-            throw new UserNotFoundException(authenticatedEmail);
+        lock.lock();
+        try {
+            if (!users.containsKey(authenticatedEmail)) {
+                throw new UserNotFoundException(authenticatedEmail);
+            }
+
+            final List<String> transactionIds = transactionsPerUser.getOrDefault(authenticatedEmail, new ArrayList<>());
+            final List<Transaction> transactionsForUser = new ArrayList<>();
+
+            for (final String id : transactionIds) {
+                transactionsForUser.add(transactions.get(id));
+            }
+
+            return transactionsForUser;
+        } finally {
+            lock.unlock();
         }
-
-        final List<String> transactionIds = transactionsPerUser.getOrDefault(authenticatedEmail, new ArrayList<>());
-        final List<Transaction> transactionsForUser = new ArrayList<>();
-
-        for (final String id : transactionIds) {
-            transactionsForUser.add(transactions.get(id));
-        }
-
-        return transactionsForUser;
     }
 
     private void updateBalance(final String paidFor, final String paidBy, final BigDecimal amount) {

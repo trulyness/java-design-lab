@@ -15,7 +15,9 @@
 
 ## Concurrency Approach
 
-- To be filled in during implementation.
+- `InMemoryStore` uses a single `ReentrantLock` to serialize public store operations.
+- Mutating operations such as expense creation and settlement update multiple maps (`expenses`, group indexes, balances, transactions), so they execute under one lock to keep those structures consistent.
+- Read operations also acquire the same lock before reading derived state, so callers observe a consistent snapshot.
 
 ## Data Model Notes
 
@@ -45,8 +47,10 @@
 - Equal and percentage splits use straightforward two-decimal rounding per participant; tiny rounding residuals are accepted for now to keep the implementation simple.
 - Removed group members are not granted separate historical group-expense access in this version; supporting that would require membership history or per-expense visibility rules.
 - Transaction history could also be shown as full expense/settlement detail cards or as a generic activity feed; this version uses user-level balance movement records to keep the model compact.
+- The global store lock is simple and safe, but it serializes all operations; a higher-throughput version could use finer-grained locks per group, user pair, or balance record.
 
 ## Potential Enhancements
 
 - Add richer transaction history views that group multiple expense-derived balance movements back into one original expense event.
 - Add filters for transaction history by group, user, transaction type, and date range.
+- Replace the single global store lock with finer-grained locking if concurrent throughput becomes important.
