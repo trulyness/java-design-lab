@@ -22,4 +22,5 @@ public interface Store {
     String createExpense(final Expense expense);
 
     Map<String, BigDecimal> getBalancesForUser(final String authenticatedEmail);
+    void settleUp(final String authenticatedEmail, final String paidTo, final BigDecimal amount);
 }

@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.design.lab.splitwise.exceptions.GroupMembershipRequiredException;
 import com.design.lab.splitwise.exceptions.GroupNotFoundException;
+import com.design.lab.splitwise.exceptions.InvalidExpenseException;
 import com.design.lab.splitwise.exceptions.UserAlreadyExistsException;
 import com.design.lab.splitwise.exceptions.UserNotFoundException;
 import com.design.lab.splitwise.model.Expense;
@@ -119,6 +120,23 @@ public class InMemoryStore implements Store {
         }
 
         return new HashMap<>(balances.getOrDefault(authenticatedEmail, new HashMap<>()));
+    }
+
+    @Override
+    public void settleUp(final String authenticatedEmail, final String paidTo, final BigDecimal amount) {
+        if (!users.containsKey(authenticatedEmail)) {
+            throw new UserNotFoundException(authenticatedEmail);
+        }
+
+        if (!users.containsKey(paidTo)) {
+            throw new UserNotFoundException(paidTo);
+        }
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidExpenseException("Settlement amount must be greater than zero");
+        }
+
+        updateBalance(paidTo, authenticatedEmail, amount);
     }
 
     private void updateBalance(final String paidFor, final String paidBy, final BigDecimal amount) {

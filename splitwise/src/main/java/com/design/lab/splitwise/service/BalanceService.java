@@ -15,4 +15,10 @@ public class BalanceService {
     public Map<String, BigDecimal> getBalancesForUser(final String authenticatedEmail) {
         return this.store.getBalancesForUser(authenticatedEmail);
     }
+
+    public void settleUp(final String authenticatedEmail,
+                    final String paidTo,
+                    final BigDecimal amount) {
+        this.store.settleUp(authenticatedEmail, paidTo, amount);
+    }
 }
