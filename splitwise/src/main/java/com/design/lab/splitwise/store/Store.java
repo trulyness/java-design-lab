@@ -1,6 +1,8 @@
 package com.design.lab.splitwise.store;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.design.lab.splitwise.model.Expense;
@@ -18,4 +20,6 @@ public interface Store {
     List<Expense> getGroupExpenses(final String authenticatedEmail, final String groupId);
 
     String createExpense(final Expense expense);
+
+    Map<String, BigDecimal> getBalancesForUser(final String authenticatedEmail);
 }

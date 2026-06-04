@@ -1,5 +1,6 @@
 package com.design.lab.splitwise.store;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,12 +20,14 @@ public class InMemoryStore implements Store {
     private final Map<String, Group> groups;
     private final Map<String, Expense> expenses;
     private final Map<String, List<String>> expensesPerGroup;
+    private final Map<String, Map<String, BigDecimal>> balances;
 
     public InMemoryStore() {
         this.users = new HashMap<>();
         this.groups = new HashMap<>();
         this.expenses = new HashMap<>();
         this.expensesPerGroup = new HashMap<>();
+        this.balances = new HashMap<>(); 
     }
 
     @Override
@@ -87,6 +90,14 @@ public class InMemoryStore implements Store {
 
         expenses.put(expense.getExpenseId(), expense);
         expensesPerGroup.computeIfAbsent(groupId, k -> new ArrayList<>()).add(expense.getExpenseId());
+        final Map<String, BigDecimal> shares = expense.getParticipantShares();
+        for (final Map.Entry<String, BigDecimal> entry : shares.entrySet()) {
+            final String participant = entry.getKey();
+            final BigDecimal share = entry.getValue();
+            if (!participant.equals(expense.getPaidBy())) {
+                updateBalance(participant, expense.getPaidBy(), share);
+            }
+        }
         return expense.getExpenseId();
     }
 
@@ -99,6 +110,23 @@ public class InMemoryStore implements Store {
             expensesForGroup.add(expenses.get(id));
         }
         return expensesForGroup;
+    }
+
+    @Override
+    public Map<String, BigDecimal> getBalancesForUser(final String authenticatedEmail) {
+        if (!users.containsKey(authenticatedEmail)) {
+            throw new UserNotFoundException(authenticatedEmail);
+        }
+
+        return new HashMap<>(balances.getOrDefault(authenticatedEmail, new HashMap<>()));
+    }
+
+    private void updateBalance(final String paidFor, final String paidBy, final BigDecimal amount) {
+        final Map<String, BigDecimal> paidForBalances = balances.computeIfAbsent(paidFor, k -> new HashMap<>());
+        final Map<String, BigDecimal> paidByBalances = balances.computeIfAbsent(paidBy, k -> new HashMap<>());
+
+        paidForBalances.put(paidBy, paidForBalances.getOrDefault(paidBy, BigDecimal.ZERO).subtract(amount));
+        paidByBalances.put(paidFor, paidByBalances.getOrDefault(paidFor, BigDecimal.ZERO).add(amount));
     }
 
     private Group getGroupForMember(final String authenticatedEmail, final String groupId) {

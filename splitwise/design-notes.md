@@ -30,6 +30,8 @@
 - Expense participants and exact-share maps are defensively copied before creating the stored expense.
 - Exact splits require participant shares to be positive and add up to the total expense amount.
 - Percentage splits require percentages to be positive and add up to `100`; raw percentages are converted into final absolute owed amounts before storing the expense.
+- Balances are tracked globally between users across all groups rather than separately per group.
+- Balance sign convention: `balances[A][B] > 0` means `B` owes `A`; `balances[A][B] < 0` means `A` owes `B`.
 
 ## Known Tradeoffs
 
