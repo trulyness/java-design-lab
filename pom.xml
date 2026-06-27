@@ -15,6 +15,7 @@
         <module>conference-room-reservation-system</module>
         <module>in-memory-trading-service</module>
         <module>splitwise</module>
+        <module>timeseries-db</module>
     </modules>
 
     <properties>
